@@ -1,0 +1,8 @@
+SQLAlchemy==1.4.22
+bcrypt
+tensorflow
+streamlit
+pandas
+numpy
+matplotlib
+yfinance
