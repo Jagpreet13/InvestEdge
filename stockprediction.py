@@ -71,7 +71,7 @@ def generate_signal(stock_symbol):
     scaler_scale = 1 / scaler.scale_[0]
     predicted_prices = predicted_prices * scaler_scale
 
-    # Get the most recent predicted price and the moving average price
+    # Get the most recent predicted price, moving average price, and latest actual price
     latest_predicted_price = predicted_prices[-1][0]
     latest_actual_price = df['Close'].iloc[-1]
     latest_avg_price = df['MA'].iloc[-1]
@@ -86,11 +86,11 @@ def generate_signal(stock_symbol):
     # Generate trading signals
     if latest_predicted_price < latest_avg_price:
         if upward_trend:
-            return "Buy", latest_predicted_price, latest_avg_price
+            return "Buy", latest_predicted_price, latest_avg_price, latest_actual_price
         else:
-            return "Sell", latest_predicted_price, latest_avg_price
+            return "Sell", latest_predicted_price, latest_avg_price, latest_actual_price
     else:
-        return "Hold", latest_predicted_price, latest_avg_price
+        return "Hold", latest_predicted_price, latest_avg_price, latest_actual_price
 
 # Main application logic
 def main():
@@ -155,13 +155,18 @@ def main():
                 columns = st.columns(min(len(user.watchlist), 5))
                 for idx, stock in enumerate(user.watchlist):
                     stock_info = yf.Ticker(stock.stock_symbol).info
-                    signal, predicted_price, avg_price = generate_signal(stock.stock_symbol)
+                    signal, predicted_price, avg_price, actual_price = generate_signal(stock.stock_symbol)
                     with columns[idx]:
                         st.write(f"**{stock.stock_symbol}**")
                         st.write(f"Name: {stock_info.get('shortName', 'N/A')}")
+                        st.write(f"Original Price: {actual_price:.2f}")
                         st.write(f"Predicted Price: {predicted_price:.2f}")
                         st.write(f"Average Price: {avg_price:.2f}")
                         st.write(f"Signal: {signal}")
+
+                        # Visual bar showing the current performance
+                        performance = min(predicted_price / avg_price, 1.0) if avg_price else 0.0
+                        st.progress(performance)
 
                         if st.button(f"Predict {stock.stock_symbol}"):
                             st.session_state['stock_symbol'] = stock.stock_symbol
@@ -222,7 +227,7 @@ def main():
             x_test, y_test = [], []
 
             for i in range(100, input_data.shape[0]):
-                x_test.append(input_data[i - 100:i])
+                x_test.append(input_data[i - 100: i])
                 y_test.append(input_data[i, 0])
 
             x_test, y_test = np.array(x_test), np.array(y_test)
